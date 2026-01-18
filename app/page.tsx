@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, useScroll, useTransform, AnimatePresence, PanInfo, Variants } from "framer-motion";
 
 // --- 1. TypeScript Interfaces ---
@@ -9,6 +9,7 @@ interface Firefly {
   x: number;
   y: number;
   delay: number;
+  duration: number;
 }
 
 interface Skill {
@@ -16,7 +17,7 @@ interface Skill {
   img: string;
 }
 
-// --- 2. Background Animation: Fireflies ---
+// --- 2. Background Animation: Fireflies (Optimized) ---
 const Fireflies = () => {
   const [flies, setFlies] = useState<Firefly[]>([]);
 
@@ -26,6 +27,7 @@ const Fireflies = () => {
       x: Math.random() * 100,
       y: Math.random() * 100,
       delay: Math.random() * 5,
+      duration: 5 + Math.random() * 5,
     })));
   }, []);
 
@@ -41,7 +43,7 @@ const Fireflies = () => {
             x: [`${fly.x}vw`, `${fly.x + (Math.random() - 0.5) * 10}vw`],
             y: [`${fly.y}vh`, `${fly.y + (Math.random() - 0.5) * 10}vh`],
           }}
-          transition={{ duration: 5 + Math.random() * 5, repeat: Infinity, delay: fly.delay }}
+          transition={{ duration: fly.duration, repeat: Infinity, delay: fly.delay }}
         />
       ))}
     </div>
@@ -56,6 +58,7 @@ export default function Portfolio() {
   
   const { scrollYProgress } = useScroll();
   const quoteOpacity = useTransform(scrollYProgress, [0.08, 0.15], [0, 1]);
+  const recentTextParallax = useTransform(scrollYProgress, [0.3, 0.6], [0, -50]);
 
   useEffect(() => {
     const sections = ["home", "aboutme", "recent", "contact"];
@@ -111,11 +114,11 @@ export default function Portfolio() {
       <Fireflies />
       
       {/* Side Decor */}
-      <div className="fixed left-0 top-0 h-full w-24 pointer-events-none z-[10] opacity-40 overflow-hidden">
+      <div className="fixed left-0 top-0 h-full w-24 pointer-events-none z-[10] opacity-30 overflow-hidden">
         <img src="/fern-leaf.png" className="absolute -left-10 top-0 w-full h-auto object-cover rotate-90" alt="" />
         <img src="/fern-leaf.png" className="absolute -left-10 bottom-0 w-full h-auto object-cover rotate-90" alt="" />
       </div>
-      <div className="fixed right-0 top-0 h-full w-24 pointer-events-none z-[10] opacity-40 overflow-hidden">
+      <div className="fixed right-0 top-0 h-full w-24 pointer-events-none z-[10] opacity-30 overflow-hidden">
         <img src="/fern-leaf.png" className="absolute -right-10 top-0 w-full h-auto object-cover -rotate-90 scale-x-[-1]" alt="" />
         <img src="/fern-leaf.png" className="absolute -right-10 bottom-0 w-full h-auto object-cover -rotate-90 scale-x-[-1]" alt="" />
       </div>
@@ -159,7 +162,7 @@ export default function Portfolio() {
       </section>
 
       {/* Section 2: About Me */}
-      <motion.section id="aboutme" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={containerVariants} className="py-40 px-6 max-w-7xl mx-auto flex flex-col items-center">
+      <motion.section id="aboutme" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={containerVariants} className="py-40 px-6 max-w-7xl mx-auto flex flex-col items-center relative">
         <motion.h1 variants={itemVariants} className="text-5xl md:text-8xl font-black mb-2 tracking-tighter text-white text-center uppercase">SYAFIQ HAMDANI</motion.h1>
         <motion.p variants={itemVariants} className="text-cyan-400 font-mono tracking-[0.3em] mb-20 text-sm text-center">MULTIMEDIA COMPUTING | DIGITAL DESIGNER</motion.p>
         <div className="relative w-full flex flex-col md:flex-row items-center justify-center gap-12 md:gap-24">
@@ -194,12 +197,29 @@ export default function Portfolio() {
         </div>
       </motion.section>
 
-      {/* Section 3: Recent (FIXED GRID & ASPECT) */}
-      <motion.section id="recent" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.1 }} variants={containerVariants} className="py-32 relative">
-        <div className="max-w-7xl mx-auto px-6">
-          <motion.h2 variants={itemVariants} className="text-[12vw] font-black text-center mb-12 text-white tracking-tighter uppercase"> RECENT </motion.h2>
+      {/* --- RECENT SECTION (INTEGRATED & ATMOSPHERIC) --- */}
+      <motion.section 
+        id="recent" 
+        initial="hidden" 
+        whileInView="visible" 
+        viewport={{ once: true, amount: 0.1 }} 
+        variants={containerVariants} 
+        className="relative py-40 overflow-visible"
+      >
+        {/* The Fog Bridge: Blends the black background with the "Recent" section */}
+        <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-[#1a1c1e] via-transparent to-transparent z-10 pointer-events-none" />
+
+        {/* Atmospheric Glow: Fills the empty space in your photo */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[90vw] h-[600px] bg-cyan-500/5 blur-[160px] rounded-full -z-10" />
+
+        <div className="max-w-7xl mx-auto px-6 relative z-20">
+          <motion.div style={{ y: recentTextParallax }}>
+            <motion.h2 variants={itemVariants} className="text-[12vw] font-black text-center mb-12 text-white tracking-tighter uppercase leading-none opacity-90"> 
+              RECENT 
+            </motion.h2>
+          </motion.div>
           
-          <motion.div variants={itemVariants} className="sticky top-24 z-40 flex justify-center mb-20 w-fit mx-auto">
+          <motion.div variants={itemVariants} className="sticky top-24 z-40 flex justify-center mb-24 w-fit mx-auto">
             <div className="flex p-1.5 bg-[#1a1c1e]/80 backdrop-blur-3xl rounded-[2.5rem] border border-white/5 shadow-2xl">
               {["Project", "Skills", "Certification"].map((tab) => (
                 <button key={tab} onClick={() => setActiveTab(tab)} className={`relative px-6 md:px-10 py-3.5 rounded-full text-sm font-bold transition-colors duration-500 z-10 ${activeTab === tab ? "text-black" : "text-slate-500 hover:text-white"}`}>
@@ -213,10 +233,9 @@ export default function Portfolio() {
           <AnimatePresence mode="wait">
             {activeTab === "Project" && (
               <motion.div key="proj" initial="hidden" animate="visible" exit="hidden" variants={containerVariants} className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {/* Card 1 */}
                 <motion.div variants={itemVariants} className="flex flex-col group bg-[#242628] rounded-[2.5rem] overflow-hidden border border-white/5 transition-all hover:scale-[1.02] hover:border-cyan-500/50 shadow-xl">
                   <div className="aspect-[4/3] w-full overflow-hidden">
-                    <img src="/yolo-project.png" className="h-full w-full object-cover" alt="" />
+                    <img src="/yolo-project.png" className="h-full w-full object-cover" alt="YOLOv7 Project" />
                   </div>
                   <div className="p-8 flex-grow">
                     <span className="text-[10px] text-cyan-400 font-mono uppercase tracking-[0.2em]">AI & Computer Vision</span>
@@ -225,10 +244,9 @@ export default function Portfolio() {
                   </div>
                 </motion.div>
 
-                {/* Card 2 */}
                 <motion.div variants={itemVariants} className="flex flex-col group bg-[#242628] rounded-[2.5rem] overflow-hidden border border-white/5 transition-all hover:scale-[1.02] hover:border-purple-500/50 shadow-xl">
                   <div className="aspect-[4/3] w-full overflow-hidden">
-                    <img src="/matac-directory.png" className="h-full w-full object-cover" alt="" />
+                    <img src="/matac-directory.png" className="h-full w-full object-cover" alt="MATAC Directory" />
                   </div>
                   <div className="p-8 flex-grow">
                     <span className="text-[10px] text-purple-400 font-mono uppercase tracking-[0.2em]">Graphic Design</span>
@@ -237,7 +255,6 @@ export default function Portfolio() {
                   </div>
                 </motion.div>
 
-                {/* Card 3 */}
                 <motion.div variants={itemVariants} className="flex flex-col justify-center items-center text-center p-10 bg-[#242628] rounded-[2.5rem] border border-white/5 hover:border-emerald-500/50 transition-all min-h-[400px]">
                   <h4 className="text-3xl font-bold tracking-tight">Portfolio 2026</h4>
                   <p className="text-emerald-400 font-mono text-[10px] mt-3 uppercase tracking-[0.3em]">Ongoing</p>
@@ -273,7 +290,7 @@ export default function Portfolio() {
       </motion.section>
 
       {/* Section 4: Contact */}
-      <motion.section id="contact" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={containerVariants} className="py-40 max-w-5xl mx-auto px-6">
+      <motion.section id="contact" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={containerVariants} className="py-40 max-w-5xl mx-auto px-6 relative z-20">
         <motion.h2 variants={itemVariants} className="text-6xl md:text-7xl font-black mb-20 text-center uppercase tracking-tighter">Contact</motion.h2>
         <div className="grid md:grid-cols-2 gap-20">
           <motion.div variants={itemVariants} className="space-y-10">
