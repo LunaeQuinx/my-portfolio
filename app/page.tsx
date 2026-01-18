@@ -1,17 +1,38 @@
 "use client";
 import { useState, useEffect } from "react";
-import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
+import { motion, useScroll, useTransform, AnimatePresence, Variants } from "framer-motion";
+
+// --- Types ---
+interface Firefly {
+  id: number;
+  x: number;
+  y: number;
+  targetX: number;
+  targetY: number;
+  duration: number;
+  delay: number;
+}
+
+interface Skill {
+  name: string;
+  img: string;
+}
 
 // --- 1. Background Animation: Fireflies ---
 const Fireflies = () => {
-  const [flies, setFlies] = useState([]);
+  const [flies, setFlies] = useState<Firefly[]>([]);
+  
   useEffect(() => {
-    setFlies(Array.from({ length: 40 }).map((_, i) => ({
+    const generatedFlies: Firefly[] = Array.from({ length: 40 }).map((_, i) => ({
       id: i,
       x: Math.random() * 100,
       y: Math.random() * 100,
+      targetX: (Math.random() - 0.5) * 15,
+      targetY: (Math.random() - 0.5) * 15,
+      duration: 5 + Math.random() * 5,
       delay: Math.random() * 5,
-    })));
+    }));
+    setFlies(generatedFlies);
   }, []);
 
   return (
@@ -23,10 +44,15 @@ const Fireflies = () => {
           initial={{ opacity: 0, x: `${fly.x}vw`, y: `${fly.y}vh` }}
           animate={{
             opacity: [0, 0.8, 0],
-            x: [`${fly.x}vw`, `${fly.x + (Math.random() - 0.5) * 10}vw`],
-            y: [`${fly.y}vh`, `${fly.y + (Math.random() - 0.5) * 10}vh`],
+            x: [`${fly.x}vw`, `${fly.x + fly.targetX}vw`],
+            y: [`${fly.y}vh`, `${fly.y + fly.targetY}vh`],
           }}
-          transition={{ duration: 5 + Math.random() * 5, repeat: Infinity, delay: fly.delay }}
+          transition={{ 
+            duration: fly.duration, 
+            repeat: Infinity, 
+            delay: fly.delay,
+            ease: "easeInOut"
+          }}
         />
       ))}
     </div>
@@ -34,10 +60,10 @@ const Fireflies = () => {
 };
 
 export default function Portfolio() {
-  const [activeTab, setActiveTab] = useState("Project");
-  const [activeNav, setActiveNav] = useState("home");
-  const [selectedCert, setSelectedCert] = useState(null);
-  const [isFlipped, setIsFlipped] = useState(false); 
+  const [activeTab, setActiveTab] = useState<string>("Project");
+  const [activeNav, setActiveNav] = useState<string>("home");
+  const [selectedCert, setSelectedCert] = useState<string | null>(null);
+  const [isFlipped, setIsFlipped] = useState<boolean>(false); 
   
   const { scrollYProgress } = useScroll();
   const quoteOpacity = useTransform(scrollYProgress, [0.08, 0.15], [0, 1]);
@@ -58,22 +84,29 @@ export default function Portfolio() {
     return () => observer.disconnect();
   }, []);
 
-  const scrollToSection = (id) => {
+  const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) element.scrollIntoView({ behavior: "smooth" });
   };
 
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { staggerChildren: 0.2, delayChildren: 0.1 } }
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 40 },
-    visible: { opacity: 1, y: 0, transition: { duration: 1.2, ease: [0.16, 1, 0.3, 1] } }
+    visible: { 
+      opacity: 1, 
+      y: 0, 
+      transition: { 
+        duration: 1.2, 
+        ease: [0.16, 1, 0.3, 1] as const // Fixed Type Error
+      } 
+    }
   };
 
-  const skills = [
+  const skills: Skill[] = [
     { name: "Java", img: "java.png" }, { name: "C++", img: "cpp.png" }, { name: "Python", img: "python.png" },
     { name: "Photoshop", img: "photoshop.png" }, { name: "Illustrator", img: "illustrator.png" }, { name: "Figma", img: "figma.png" },
     { name: "Premiere", img: "premiere.png" }, { name: "Topaz", img: "topaz.png" }, { name: "Movavi", img: "movavi.png" },
@@ -81,7 +114,7 @@ export default function Portfolio() {
     { name: "HTML", img: "html.png" }, { name: "PHP", img: "php.png" }, { name: "NetBeans", img: "netbeans.png" }
   ];
 
-  const handleDragEnd = (event, info) => {
+  const handleDragEnd = (_: any, info: any) => {
     if (Math.abs(info.velocity.x) > 200 || Math.abs(info.offset.x) > 100) {
       setIsFlipped(!isFlipped);
     }
@@ -156,7 +189,7 @@ export default function Portfolio() {
         </div>
       </section>
 
-      {/* Section 2: About Me (WITH PERSISTENT GLOW) */}
+      {/* Section 2: About Me */}
       <motion.section 
         id="aboutme"
         initial="hidden"
@@ -187,7 +220,6 @@ export default function Portfolio() {
               className="relative w-full h-full cursor-grab active:cursor-grabbing"
               animate={{ 
                 rotateY: isFlipped ? 180 : 0,
-                // PERSISTENT AMBIENT GLOW
                 boxShadow: isFlipped 
                   ? "0px 0px 40px rgba(34,211,238,0.2)" 
                   : "0px 0px 30px rgba(34,211,238,0.15)"
@@ -196,7 +228,6 @@ export default function Portfolio() {
               dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
               dragSnapToOrigin={true}
               onDragEnd={handleDragEnd}
-              // INTENSIFIED GLOW ON INTERACTION
               whileHover={{ 
                 rotateX: isFlipped ? 0 : 10, 
                 rotateY: isFlipped ? 180 : 15, 
@@ -211,19 +242,9 @@ export default function Portfolio() {
               style={{ transformStyle: "preserve-3d" }}
             >
               {/* --- FRONT FACE --- */}
-              <div 
-                className="absolute inset-0 w-full h-full rounded-[2.5rem] overflow-hidden"
-                style={{ backfaceVisibility: "hidden" }}
-              >
-                {/* Background Radiant Glow Layer */}
+              <div className="absolute inset-0 w-full h-full rounded-[2.5rem] overflow-hidden" style={{ backfaceVisibility: "hidden" }}>
                 <div className="absolute inset-0 bg-cyan-500/10 blur-3xl" />
-                
-                <img 
-                  src="/syafiq-portrait.png" 
-                  className="w-full h-full object-cover grayscale transition-all duration-700 hover:grayscale-0 border border-white/10" 
-                  alt="Syafiq Portrait" 
-                />
-                
+                <img src="/syafiq-portrait.png" className="w-full h-full object-cover grayscale transition-all duration-700 hover:grayscale-0 border border-white/10" alt="Syafiq Portrait" />
                 <button 
                   onClick={(e) => { e.stopPropagation(); setIsFlipped(true); }}
                   className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-cyan-400 text-black px-6 py-2.5 rounded-full font-black text-[10px] uppercase tracking-widest shadow-[0_0_20px_rgba(34,211,238,0.6)] hover:scale-110 transition-transform"
@@ -233,17 +254,11 @@ export default function Portfolio() {
               </div>
 
               {/* --- BACK FACE --- */}
-              <div 
-                className="absolute inset-0 w-full h-full bg-[#242628] rounded-[2.5rem] border border-cyan-500/50 p-10 flex flex-col justify-between"
-                style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
-              >
-                {/* Back side internal glow */}
+              <div className="absolute inset-0 w-full h-full bg-[#242628] rounded-[2.5rem] border border-cyan-500/50 p-10 flex flex-col justify-between" style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
                 <div className="absolute inset-0 bg-cyan-500/[0.03] blur-2xl pointer-events-none" />
-                
                 <div className="absolute top-0 right-0 p-6 opacity-20">
                   <img src="/yggdrasil.png" className="w-16" alt="" />
                 </div>
-                
                 <div className="relative z-10">
                   <h4 className="text-cyan-400 font-mono text-[10px] tracking-[0.4em] mb-8 uppercase">Creative Fuel</h4>
                   <div className="space-y-6">
@@ -267,7 +282,6 @@ export default function Portfolio() {
                     </div>
                   </div>
                 </div>
-
                 <button 
                   onClick={(e) => { e.stopPropagation(); setIsFlipped(false); }}
                   className="relative z-10 w-full py-3 border border-cyan-500/30 rounded-xl text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-cyan-400 hover:border-cyan-400 hover:shadow-[0_0_15px_rgba(34,211,238,0.2)] transition-all"
@@ -280,7 +294,7 @@ export default function Portfolio() {
         </div>
       </motion.section>
 
-      {/* --- REST OF THE SECTIONS --- */}
+      {/* Section 3: Recent */}
       <motion.section id="recent" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.1 }} variants={containerVariants} className="py-32 relative bg-black/20">
         <div className="max-w-7xl mx-auto px-6">
           <motion.h2 variants={itemVariants} className="text-[12vw] font-black text-center mb-12 text-white tracking-tighter uppercase"> RECENT </motion.h2>
@@ -312,7 +326,7 @@ export default function Portfolio() {
             {activeTab === "Project" && (
               <motion.div key="proj" initial="hidden" animate="visible" exit="hidden" variants={containerVariants} className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <motion.div variants={itemVariants} className="group bg-[#242628] rounded-3xl overflow-hidden border border-white/5 transition-all hover:scale-[1.02] hover:border-cyan-500/50 shadow-xl">
-                  <img src="/yolo-project.png" className="h-64 w-full object-cover" alt="" />
+                  <img src="/yolo-project.png" className="h-64 w-full object-cover" alt="Traffic Detection" />
                   <div className="p-8">
                     <span className="text-xs text-cyan-400 font-mono uppercase tracking-widest">AI & Computer Vision</span>
                     <h4 className="text-2xl font-bold mt-4">Traffic Detection (YOLOv7)</h4>
@@ -320,7 +334,7 @@ export default function Portfolio() {
                   </div>
                 </motion.div>
                 <motion.div variants={itemVariants} className="group bg-[#242628] rounded-3xl overflow-hidden border border-white/5 transition-all hover:scale-[1.02] hover:border-purple-500/50 shadow-xl">
-                  <img src="/matac-directory.png" className="h-64 w-full object-cover" alt="" />
+                  <img src="/matac-directory.png" className="h-64 w-full object-cover" alt="MATAC Directory" />
                   <div className="p-8">
                     <span className="text-xs text-purple-400 font-mono uppercase tracking-widest">Graphic Design</span>
                     <h4 className="text-2xl font-bold mt-4">MATAC Directory</h4>
@@ -364,6 +378,7 @@ export default function Portfolio() {
         </div>
       </motion.section>
 
+      {/* Section 4: Contact */}
       <motion.section id="contact" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={containerVariants} className="py-40 max-w-5xl mx-auto px-6">
         <motion.h2 variants={itemVariants} className="text-7xl font-black mb-20 text-center uppercase tracking-tighter">Contact</motion.h2>
         <div className="grid md:grid-cols-2 gap-20">
