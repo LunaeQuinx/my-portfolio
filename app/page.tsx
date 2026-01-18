@@ -33,6 +33,8 @@ const Fireflies = () => {
   );
 };
 
+
+
 export default function Portfolio() {
   const [activeTab, setActiveTab] = useState("Project");
   const { scrollYProgress } = useScroll();
@@ -75,24 +77,48 @@ export default function Portfolio() {
       </nav>
 
       {/* --- Section 1: Epic Hero --- */}
-      <section className="relative h-screen flex flex-col items-center justify-center text-center px-4 z-[5]">
-        <div className="absolute top-12 left-12 text-3xl font-serif italic tracking-tighter opacity-90">Syafiq Hamdani</div>
-        
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 2 }}>
-          <h2 className="text-[14vw] font-black leading-none tracking-tighter opacity-10 uppercase">Portfolio</h2>
-          <img src="/yggdrasil.png" className="w-[45vw] md:w-[30vw] my-[-12vh] z-10 relative drop-shadow-[0_0_50px_rgba(34,211,238,0.3)]" alt="Yggdrasil" />
-          <h2 className="text-[14vw] font-black leading-none tracking-tighter opacity-10 ml-[25vw] uppercase">2026</h2>
-        </motion.div>
+<section className="relative h-screen flex flex-col items-center justify-center text-center px-4 z-[5] overflow-hidden">
+  {/* Nama di bucu skrin */}
+  <div className="absolute top-8 left-6 md:top-12 md:left-12 text-xl md:text-3xl font-serif italic tracking-tighter opacity-90">
+    Syafiq Hamdani
+  </div>
+  
+  <motion.div 
+  initial={{ opacity: 0, scale: 0.8 }} 
+  animate={{ opacity: 1, scale: 1 }} 
+  transition={{ duration: 2 }}
+  className="flex flex-col items-center justify-center w-full relative z-10"
+>
+  {/* "Portfolio" - Dikecilkan saiznya */}
+  <h2 className="text-[10vw] md:text-[12vw] font-black leading-none tracking-tighter opacity-10 uppercase select-none relative z-10">
+    Portfolio
+  </h2>
+  
+  {/* Yggdrasil - Ditetapkan pada z-20 */}
+  <img 
+    src="/yggdrasil.png" 
+    className="w-[75vw] md:w-[40vw] my-[-6vh] md:my-[-10vh] z-20 relative drop-shadow-[0_0_60px_rgba(34,211,238,0.4)] mx-auto" 
+    alt="Yggdrasil" 
+  />
+  
+  {/* "2026" - Dikecilkan & diletakkan di hadapan imej (z-30) */}
+  <h2 className="text-[10vw] md:text-[12vw] font-black leading-none tracking-tighter opacity-10 uppercase select-none relative z-30 mt-[-6vh] md:mt-[-12vh] md:ml-[35vw]">
+  2026
+</h2>
+</motion.div>
 
-        {/* The Gate Ferns */}
-        <div className="absolute bottom-0 w-full h-[40vh] flex justify-center items-end overflow-hidden">
-          <motion.img style={{ rotate: gateRotateLeft, y: gateY, originX: 0, originY: 1 }} src="/fern-leaf.png" className="w-[60vw] md:w-[40vw] z-30" />
-          <motion.div style={{ opacity: quoteOpacity }} className="absolute bottom-20 z-20 max-w-2xl px-8 italic text-cyan-100 text-lg md:text-xl font-light">
-            "There is a happiness vibrating in every sketched line, a promise that this masterpiece will begin to breathe shortly."
-          </motion.div>
-          <motion.img style={{ rotate: gateRotateRight, y: gateY, originX: 1, originY: 1 }} src="/fern-leaf.png" className="w-[60vw] md:w-[40vw] z-30 scale-x-[-1]" />
-        </div>
-      </section>
+  {/*  (The Gate Ferns) */}
+  <div className="absolute bottom-0 w-full h-[35vh] md:h-[45vh] flex justify-center items-end overflow-hidden">
+   
+    <motion.div 
+      style={{ opacity: quoteOpacity }} 
+      className="absolute bottom-16 md:bottom-24 z-40 max-w-[90vw] md:max-w-2xl px-4 italic text-cyan-100 text-sm md:text-xl font-light leading-snug"
+    >
+      "There is a happiness vibrating in every sketched line, a promise that this masterpiece will begin to breathe shortly."
+    </motion.div>
+  
+  </div>
+</section>
 
       {/* --- Section 2: About Me (Border Break) --- */}
       <section className="py-40 px-6 max-w-7xl mx-auto flex flex-col items-center">
@@ -121,7 +147,7 @@ export default function Portfolio() {
       {/* --- Section 3: Recent (Sticky Scroll) --- */}
       <section className="py-32 relative bg-black/20">
         <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-[12vw] font-black text-center mb-12 opacity-5 tracking-tighter">RECENT</h2>
+          <h2 className="text-[12vw] font-black text-center mb-12 text-white opacity-100 tracking-tighter uppercase"> RECENT </h2>
           
           <div className="sticky top-24 z-40 flex justify-center gap-6 mb-20 bg-[#1a1c1e]/80 backdrop-blur-lg py-4 rounded-full border border-white/5 w-fit mx-auto px-8">
             {["Project", "Skills", "Certification"].map((tab) => (
