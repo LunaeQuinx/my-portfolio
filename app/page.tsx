@@ -393,7 +393,7 @@ export default function Portfolio() {
       </motion.section>
       
       <footer className="py-20 text-center opacity-20 text-[10px] tracking-[0.5em] font-mono">
-        &copy; 2026 MOHAMAD SYAFIQ HAMDANI | BUILT WITH NEXT.JS & ASGARD MAGIC
+        &copy; 2026 | SYAFIQ HAMDANI | BUILT WITH NEXT.JS & ASGARD MAGIC
       </footer>
 
       <AnimatePresence>
@@ -410,4 +410,4 @@ export default function Portfolio() {
       </AnimatePresence>
     </main>
   );
-}
+} 
