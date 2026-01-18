@@ -94,12 +94,17 @@ export default function Portfolio() {
     Portfolio
   </h2>
   
-  {/* Yggdrasil - Ditetapkan pada z-20 */}
-  <img 
-    src="/yggdrasil.png" 
-    className="w-[75vw] md:w-[40vw] my-[-6vh] md:my-[-10vh] z-20 relative drop-shadow-[0_0_60px_rgba(34,211,238,0.4)] mx-auto" 
-    alt="Yggdrasil" 
-  />
+  <motion.img 
+  src="/yggdrasil.png" 
+  animate={{ y: [0, -20, 0] }} // This creates the vertical "float"
+  transition={{ 
+    duration: 6,           // How long one full float takes (6 seconds)
+    repeat: Infinity,      // Makes it loop forever
+    ease: "easeInOut"      // Makes the start and end of the move smooth
+  }}
+  className="w-[85vw] md:w-[35vw] my-[-6vh] md:my-[-12vh] z-20 relative drop-shadow-[0_0_80px_rgba(34,211,238,0.3)] mx-auto" 
+  alt="Yggdrasil" 
+/>
   
   {/* "2026" - Dikecilkan & diletakkan di hadapan imej (z-30) */}
   <h2 className="text-[10vw] md:text-[12vw] font-black leading-none tracking-tighter opacity-10 uppercase select-none relative z-30 mt-[-6vh] md:mt-[-12vh] md:ml-[35vw]">
@@ -116,7 +121,7 @@ export default function Portfolio() {
     >
       "There is a happiness vibrating in every sketched line, a promise that this masterpiece will begin to breathe shortly."
     </motion.div>
-  
+    
   </div>
 </section>
 
@@ -225,7 +230,7 @@ export default function Portfolio() {
         <div className="grid md:grid-cols-2 gap-20">
           <div className="space-y-10">
             <h3 className="text-3xl font-bold">Get in Touch</h3>
-            <form action="https://formspree.io/f/YOUR_ID" method="POST" className="space-y-6">
+            <form action="https://formspree.io/f/xreepywr" method="POST" className="space-y-6">
               <input name="name" placeholder="Name" className="w-full bg-white/5 border border-white/10 p-5 rounded-2xl focus:border-cyan-500 outline-none transition-all" required />
               <input name="email" type="email" placeholder="Email" className="w-full bg-white/5 border border-white/10 p-5 rounded-2xl focus:border-cyan-500 outline-none transition-all" required />
               <textarea name="message" rows={5} placeholder="Send Message" className="w-full bg-white/5 border border-white/10 p-5 rounded-2xl focus:border-cyan-500 outline-none transition-all" required />
