@@ -1,4 +1,6 @@
 "use client";
+
+import Link from "next/link";
 import { useState, useEffect, useRef, memo } from "react";
 import { motion, useScroll, useTransform, AnimatePresence, Variants } from "framer-motion";
 
@@ -402,22 +404,34 @@ export default function Portfolio() {
           <AnimatePresence mode="wait">
             {activeTab === "Project" && (
               <motion.div key="proj" initial="hidden" animate="visible" exit="hidden" variants={containerVariants} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-                <motion.div variants={itemVariants} className="group bg-[#242628] rounded-3xl overflow-hidden border border-white/5 transition-all hover:scale-[1.02] hover:border-cyan-500/50 shadow-xl">
-                  <img src="/yolo-project.png" className="h-48 md:h-64 w-full object-cover" alt="Traffic Detection" />
-                  <div className="p-6 md:p-8">
-                    <span className="text-[10px] text-cyan-400 font-mono uppercase tracking-widest">AI & Computer Vision</span>
-                    <h4 className="text-xl md:text-2xl font-bold mt-3 md:mt-4">Traffic Detection (YOLOv7)</h4>
-                    <p className="text-slate-400 mt-3 md:mt-4 text-xs md:text-sm leading-relaxed">System with 98% mAP accuracy to support urban planning.</p>
-                  </div>
-                </motion.div>
+                {/* YOLOv7 Project Card - Now Clickable */}
+                  <motion.div 
+                    variants={itemVariants} 
+                    className="group bg-[#242628] rounded-3xl overflow-hidden border border-white/5 transition-all hover:scale-[1.02] hover:border-cyan-500/50 shadow-xl cursor-pointer"
+                  >
+                    <Link href="/projects/trafficsense-ai" className="block w-full h-full">
+                      <img src="/yolo-project.png" className="h-48 md:h-64 w-full object-cover" alt="Traffic Detection" />
+                      <div className="p-6 md:p-8">
+                        <span className="text-[10px] text-cyan-400 font-mono uppercase tracking-widest">AI & Computer Vision</span>
+                        <h4 className="text-xl md:text-2xl font-bold mt-3 md:mt-4">Traffic Detection (YOLOv7)</h4>
+                        <p className="text-slate-400 mt-3 md:mt-4 text-xs md:text-sm leading-relaxed">System with 98% mAP accuracy to support urban planning.</p>
+                      </div>
+                    </Link>
+                  </motion.div>
                 
-                <motion.div variants={itemVariants} className="group bg-[#242628] rounded-3xl overflow-hidden border border-white/5 transition-all hover:scale-[1.02] hover:border-purple-500/50 shadow-xl">
-                  <img src="/matac-directory.png" className="h-48 md:h-64 w-full object-cover" alt="MATAC Directory" />
-                  <div className="p-6 md:p-8">
-                    <span className="text-[10px] text-purple-400 font-mono uppercase tracking-widest">Graphic Design</span>
-                    <h4 className="text-xl md:text-2xl font-bold mt-3 md:mt-4">MATAC Directory</h4>
-                    <p className="text-slate-400 mt-3 md:mt-4 text-xs md:text-sm leading-relaxed">End-to-end design and high-volume data management.</p>
-                  </div>
+                {/* MATAC Directory Project Card - Now Clickable */}
+                <motion.div 
+                  variants={itemVariants} 
+                  className="group bg-[#242628] rounded-3xl overflow-hidden border border-white/5 transition-all hover:scale-[1.02] hover:border-purple-500/50 shadow-xl cursor-pointer"
+                >
+                  <Link href="/projects/matac-directory" className="block w-full h-full">
+                    <img src="/matac-directory.png" className="h-48 md:h-64 w-full object-cover" alt="MATAC Directory" />
+                    <div className="p-6 md:p-8">
+                      <span className="text-[10px] text-purple-400 font-mono uppercase tracking-widest">Graphic Design</span>
+                      <h4 className="text-xl md:text-2xl font-bold mt-3 md:mt-4">MATAC Directory</h4>
+                      <p className="text-slate-400 mt-3 md:mt-4 text-xs md:text-sm leading-relaxed">End-to-end design and high-volume data management.</p>
+                    </div>
+                  </Link>
                 </motion.div>
                 
                 <motion.div variants={itemVariants} className="group bg-[#242628] rounded-3xl p-8 md:p-10 border border-white/5 flex flex-col justify-center items-center text-center hover:border-emerald-500/50 transition-all">
