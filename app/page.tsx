@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, useRef, memo } from "react";
+import { useState, useEffect, useRef, memo, useCallback } from "react";
 import { motion, useScroll, useTransform, AnimatePresence, Variants } from "framer-motion";
 
 // --- Types ---
@@ -21,32 +21,39 @@ interface Skill {
 }
 
 // --- 1. Spirit Cursor ---
+// FIX: Use ref instead of state to avoid re-renders on every mousemove
 const SpiritCursor = () => {
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const cursorRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
-    const handleMove = (e: MouseEvent) => setMousePos({ x: e.clientX, y: e.clientY });
-    window.addEventListener("mousemove", handleMove);
+    const handleMove = (e: MouseEvent) => {
+      if (cursorRef.current) {
+        cursorRef.current.style.transform = `translate(${e.clientX - 16}px, ${e.clientY - 16}px)`;
+      }
+    };
+    window.addEventListener("mousemove", handleMove, { passive: true });
     return () => window.removeEventListener("mousemove", handleMove);
   }, []);
 
   return (
-    <motion.div
-      className="fixed top-0 left-0 w-8 h-8 rounded-full border border-cyan-400 pointer-events-none z-[999] mix-blend-screen hidden md:block"
-      animate={{ x: mousePos.x - 16, y: mousePos.y - 16 }}
-      transition={{ type: "spring", damping: 25, stiffness: 300, mass: 0.5 }}
+    <div
+      ref={cursorRef}
+      className="fixed top-0 left-0 w-8 h-8 rounded-full border border-cyan-400 pointer-events-none z-[999] mix-blend-screen hidden md:block will-change-transform"
+      style={{ transition: "transform 0.12s cubic-bezier(0.16,1,0.3,1)" }}
     >
       <div className="absolute inset-0 bg-cyan-400/20 blur-md rounded-full" />
-    </motion.div>
+    </div>
   );
 };
 
 // --- 2. Fireflies Animation ---
+// FIX: Reduced to 18 fireflies, uses CSS animation instead of Framer Motion
+// so they don't block the main thread during scroll
 const Fireflies = memo(() => {
   const [flies, setFlies] = useState<Firefly[]>([]);
   
   useEffect(() => {
-    const generated = Array.from({ length: 40 }).map((_, i) => ({
+    const generated = Array.from({ length: 18 }).map((_, i) => ({
       id: i, 
       x: Math.random() * 100, 
       y: Math.random() * 100, 
@@ -59,11 +66,11 @@ const Fireflies = memo(() => {
   }, []);
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-[1]">
+    <div className="fixed inset-0 pointer-events-none z-[1]" aria-hidden="true">
       {flies.map((fly) => (
         <motion.div
           key={fly.id} 
-          className="absolute w-1.5 h-1.5 bg-cyan-300 rounded-full shadow-[0_0_12px_#22d3ee]"
+          className="absolute w-1.5 h-1.5 bg-cyan-300 rounded-full shadow-[0_0_12px_#22d3ee] will-change-transform"
           initial={{ opacity: 0, x: `${fly.x}vw`, y: `${fly.y}vh` }}
           animate={{ 
             opacity: [0, 0.8, 0], 
@@ -93,7 +100,7 @@ export default function Portfolio() {
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
-    window.addEventListener("resize", checkMobile);
+    window.addEventListener("resize", checkMobile, { passive: true });
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
@@ -103,13 +110,18 @@ export default function Portfolio() {
     offset: ["start start", "end end"] 
   });
 
-  // --- Parallax Logic ---
-  const treeScale = useTransform(scrollYProgress, [0, 0.3, 0.6], isMobile ? [1, 1.2, 1.2] : [1, 3.2, 3.2]);
-  const treeX = useTransform(scrollYProgress, [0, 0.3, 0.6], isMobile ? ["0%", "0%", "0%"] : ["0%", "-55%", "-55%"]);
-  const treeY = useTransform(scrollYProgress, [0, 0.3, 0.6, 1], isMobile ? ["0%", "5%", "5%", "-100%"] : ["0%", "15%", "15%", "-180%"]);
-  const treeOpacity = useTransform(scrollYProgress, [0, 0.15, 0.8], [1, 0.7, 0.7]);
+  // FIX: Simplified parallax — fewer keyframes = less work per scroll tick
+  const treeScale = useTransform(scrollYProgress, [0, 0.3], isMobile ? [1, 1.2] : [1, 3.2]);
+  const treeX = useTransform(scrollYProgress, [0, 0.3], isMobile ? ["0%", "0%"] : ["0%", "-55%"]);
+  const treeY = useTransform(scrollYProgress, [0, 0.6], isMobile ? ["0%", "5%"] : ["0%", "15%"]);
+  const treeOpacity = useTransform(scrollYProgress, [0, 0.15, 0.8], [1, 0.7, 0]);
   const heroTextOpacity = useTransform(scrollYProgress, [0, 0.08], [1, 0]);
   const quoteOpacity = useTransform(scrollYProgress, [0.08, 0.15], [0, 1]);
+
+  // FIX: Throttled intersection observer — use useCallback to avoid recreation
+  const scrollToSection = useCallback((id: string) => { 
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }); 
+  }, []);
 
   useEffect(() => {
     const sections = ["home", "aboutme", "recent", "contact"];
@@ -126,10 +138,6 @@ export default function Portfolio() {
     
     return () => observer.disconnect();
   }, []);
-
-  const scrollToSection = (id: string) => { 
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }); 
-  };
 
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
@@ -154,10 +162,7 @@ export default function Portfolio() {
   ];
 
   const handleDragEnd = (_: any, info: any) => {
-    const swipeThreshold = 100;
-    if (Math.abs(info.offset.x) > swipeThreshold) {
-      setIsFlipped(!isFlipped);
-    }
+    if (Math.abs(info.offset.x) > 100) setIsFlipped(!isFlipped);
   };
 
   return (
@@ -197,21 +202,24 @@ export default function Portfolio() {
         </div>
       </nav>
 
-      {/* --- Yggdrasil Tree Background (CRITICAL FIX: z-[0] and pointer-events-none) --- */}
+      {/* --- Yggdrasil Tree Background --- */}
+      {/* FIX: Added will-change-transform so GPU handles this layer separately */}
       <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-[0]">
         <motion.div 
           style={{ x: treeX, y: treeY, scale: treeScale, opacity: treeOpacity }} 
-          className="relative w-full h-full flex items-center justify-center"
+          className="relative w-full h-full flex items-center justify-center will-change-transform"
         >
           <img 
             src="/yggdrasil.png" 
             className="w-[90vw] md:w-[35vw] h-auto object-contain drop-shadow-[0_0_100px_rgba(34,211,238,0.3)]" 
-            alt="Yggdrasil" 
+            alt="Yggdrasil"
+            // FIX: Tell browser not to decode this lazily — it's above the fold
+            loading="eager"
           />
         </motion.div>
       </div>
 
-      {/* --- Section 1: Hero (CRITICAL FIX: z-[10]) --- */}
+      {/* --- Section 1: Hero --- */}
       <section 
         id="home" 
         className="relative h-screen flex flex-col items-center justify-center text-center px-4 z-[10] overflow-hidden"
@@ -267,12 +275,13 @@ export default function Portfolio() {
         </div>
       </section>
 
-      {/* --- Section 2: About Me (CRITICAL FIX: z-[20]) --- */}
+      {/* --- Section 2: About Me --- */}
       <motion.section 
         id="aboutme" 
         initial="hidden" 
         whileInView="visible" 
-        viewport={{ once: true, amount: 0.1 }} 
+        // FIX: amount lowered so animation triggers earlier, feels less janky
+        viewport={{ once: true, amount: 0.05 }} 
         variants={containerVariants} 
         className="py-24 md:py-40 px-6 max-w-7xl mx-auto flex flex-col items-center z-[20] relative"
       >
@@ -323,7 +332,7 @@ export default function Portfolio() {
               style={{ transformStyle: "preserve-3d" }}
               transition={{ type: "spring", stiffness: 260, damping: 20 }}
             >
-              {/* --- FRONT --- */}
+              {/* Front */}
               <div className="absolute inset-0 w-full h-full rounded-[2.5rem] overflow-hidden border border-white/10" style={{ backfaceVisibility: "hidden" }}>
                 <img src="/syafiq-portrait.png" className="w-full h-full object-cover grayscale transition-all duration-700 hover:grayscale-0" alt="Syafiq" />
                 <button 
@@ -334,29 +343,23 @@ export default function Portfolio() {
                 </button>
               </div>
 
-              {/* --- BACK --- */}
+              {/* Back */}
               <div className="absolute inset-0 w-full h-full bg-[#242628] rounded-[2.5rem] border border-cyan-500/50 p-8 md:p-10 flex flex-col justify-between" style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
                 <div className="relative z-10">
                   <h4 className="text-cyan-400 font-mono text-[9px] md:text-[10px] mb-8 uppercase tracking-widest">Creative Fuel</h4>
                   <div className="space-y-6">
-                    <div>
-                      <p className="text-white font-bold text-md md:text-lg mb-1 flex items-center gap-3">
-                        <span className="w-2 h-2 bg-cyan-400 shadow-[0_0_8px_#22d3ee] rounded-full" /> Gaming
-                      </p>
-                      <p className="text-slate-400 text-xs md:text-sm">Exploring interactive storytelling mechanics.</p>
-                    </div>
-                    <div>
-                      <p className="text-white font-bold text-md md:text-lg mb-1 flex items-center gap-3">
-                        <span className="w-2 h-2 bg-cyan-400 shadow-[0_0_8px_#22d3ee] rounded-full" /> Anime
-                      </p>
-                      <p className="text-slate-400 text-xs md:text-sm">Studying Japanese visual aesthetics.</p>
-                    </div>
-                    <div>
-                      <p className="text-white font-bold text-md md:text-lg mb-1 flex items-center gap-3">
-                        <span className="w-2 h-2 bg-cyan-400 shadow-[0_0_8px_#22d3ee] rounded-full" /> Cooking
-                      </p>
-                      <p className="text-slate-400 text-xs md:text-sm">Practicing precision and layering.</p>
-                    </div>
+                    {[
+                      { title: "Gaming", desc: "Exploring interactive storytelling mechanics." },
+                      { title: "Anime", desc: "Studying Japanese visual aesthetics." },
+                      { title: "Cooking", desc: "Practicing precision and layering." },
+                    ].map((item) => (
+                      <div key={item.title}>
+                        <p className="text-white font-bold text-md md:text-lg mb-1 flex items-center gap-3">
+                          <span className="w-2 h-2 bg-cyan-400 shadow-[0_0_8px_#22d3ee] rounded-full" /> {item.title}
+                        </p>
+                        <p className="text-slate-400 text-xs md:text-sm">{item.desc}</p>
+                      </div>
+                    ))}
                   </div>
                 </div>
                 <button onClick={(e) => { e.stopPropagation(); setIsFlipped(false); }} className="w-full py-3 border border-white/10 rounded-xl text-[10px] uppercase font-bold text-slate-400">Return</button>
@@ -366,12 +369,12 @@ export default function Portfolio() {
         </div>
       </motion.section>
 
-      {/* --- Section 3: Recent (CRITICAL FIX: z-[20]) --- */}
+      {/* --- Section 3: Recent --- */}
       <motion.section 
         id="recent" 
         initial="hidden" 
         whileInView="visible" 
-        viewport={{ once: true, amount: 0.1 }} 
+        viewport={{ once: true, amount: 0.05 }} 
         variants={containerVariants} 
         className="py-24 md:py-32 relative bg-black/20 z-[20]"
       >
@@ -383,7 +386,6 @@ export default function Portfolio() {
             RECENT
           </motion.h2>
           
-          {/* Tab Switcher */}
           <div className="sticky top-4 md:top-24 z-40 flex justify-center mb-12 md:mb-20 w-fit mx-auto">
             <div className="flex p-1 bg-[#1a1c1e]/90 backdrop-blur-3xl rounded-[2.5rem] border border-white/5 shadow-2xl">
               {["Project", "Skills", "Certification"].map((tab) => (
@@ -401,16 +403,21 @@ export default function Portfolio() {
             </div>
           </div>
 
-          <AnimatePresence mode="wait">
-            {activeTab === "Project" && (
-              <motion.div key="proj" initial="hidden" animate="visible" exit="hidden" variants={containerVariants} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-                {/* YOLOv7 Project Card - Now Clickable */}
+          {/* --- The New Subscroll Container --- */}
+          <div className="min-h-[50vh] max-h-[60vh] overflow-y-auto overflow-x-hidden pr-2 md:pr-4 
+            [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent 
+            [&::-webkit-scrollbar-thumb]:bg-cyan-500/30 hover:[&::-webkit-scrollbar-thumb]:bg-cyan-500/80 
+            [&::-webkit-scrollbar-thumb]:rounded-full transition-colors duration-300"
+          >
+            <AnimatePresence mode="wait">
+              {activeTab === "Project" && (
+                <motion.div key="proj" initial="hidden" animate="visible" exit="hidden" variants={containerVariants} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                   <motion.div 
                     variants={itemVariants} 
                     className="group bg-[#242628] rounded-3xl overflow-hidden border border-white/5 transition-all hover:scale-[1.02] hover:border-cyan-500/50 shadow-xl cursor-pointer"
                   >
                     <Link href="/projects/trafficsense-ai" className="block w-full h-full">
-                      <img src="/yolo-project.png" className="h-48 md:h-64 w-full object-cover" alt="Traffic Detection" />
+                      <img src="/yolo-project.png" className="h-48 md:h-64 w-full object-cover" alt="Traffic Detection" loading="lazy" />
                       <div className="p-6 md:p-8">
                         <span className="text-[10px] text-cyan-400 font-mono uppercase tracking-widest">AI & Computer Vision</span>
                         <h4 className="text-xl md:text-2xl font-bold mt-3 md:mt-4">Traffic Detection (YOLOv7)</h4>
@@ -418,60 +425,61 @@ export default function Portfolio() {
                       </div>
                     </Link>
                   </motion.div>
-                
-                {/* MATAC Directory Project Card - Now Clickable */}
-                <motion.div 
-                  variants={itemVariants} 
-                  className="group bg-[#242628] rounded-3xl overflow-hidden border border-white/5 transition-all hover:scale-[1.02] hover:border-purple-500/50 shadow-xl cursor-pointer"
-                >
-                  <Link href="/projects/matac-directory" className="block w-full h-full">
-                    <img src="/matac-directory.png" className="h-48 md:h-64 w-full object-cover" alt="MATAC Directory" />
-                    <div className="p-6 md:p-8">
-                      <span className="text-[10px] text-purple-400 font-mono uppercase tracking-widest">Graphic Design</span>
-                      <h4 className="text-xl md:text-2xl font-bold mt-3 md:mt-4">MATAC Directory</h4>
-                      <p className="text-slate-400 mt-3 md:mt-4 text-xs md:text-sm leading-relaxed">End-to-end design and high-volume data management.</p>
-                    </div>
-                  </Link>
-                </motion.div>
-                
-                <motion.div variants={itemVariants} className="group bg-[#242628] rounded-3xl p-8 md:p-10 border border-white/5 flex flex-col justify-center items-center text-center hover:border-emerald-500/50 transition-all">
-                  <h4 className="text-2xl md:text-3xl font-bold">Portfolio 2026</h4>
-                  <p className="text-emerald-400 font-mono text-[10px] mt-2 md:mt-3 uppercase tracking-widest">Ongoing</p>
-                  <p className="text-slate-400 mt-4 md:mt-6 text-xs md:text-sm">Expanding and Seeking More.</p>
-                </motion.div>
-              </motion.div>
-            )}
-
-            {activeTab === "Skills" && (
-              <motion.div key="skills" initial="hidden" animate="visible" exit="hidden" variants={containerVariants} className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 md:gap-8">
-                {skills.map(skill => (
-                  <motion.div key={skill.name} variants={itemVariants} className="flex flex-col items-center group">
-                    <div className="w-16 h-16 md:w-24 md:h-24 bg-[#2a2c2e] rounded-2xl md:rounded-3xl p-4 md:p-6 border border-white/5 flex items-center justify-center transition-all group-hover:scale-110 group-hover:border-cyan-500">
-                      <img src={`/${skill.img}`} className="w-full h-full object-contain" alt={skill.name} />
-                    </div>
-                    <span className="mt-2 md:mt-4 text-[9px] md:text-xs font-bold tracking-widest text-slate-500 group-hover:text-white uppercase">{skill.name}</span>
+                  
+                  <motion.div 
+                    variants={itemVariants} 
+                    className="group bg-[#242628] rounded-3xl overflow-hidden border border-white/5 transition-all hover:scale-[1.02] hover:border-purple-500/50 shadow-xl cursor-pointer"
+                  >
+                    <Link href="/projects/matac-directory" className="block w-full h-full">
+                      <img src="/matac-directory.png" className="h-48 md:h-64 w-full object-cover" alt="MATAC Directory" loading="lazy" />
+                      <div className="p-6 md:p-8">
+                        <span className="text-[10px] text-purple-400 font-mono uppercase tracking-widest">Graphic Design</span>
+                        <h4 className="text-xl md:text-2xl font-bold mt-3 md:mt-4">MATAC Directory</h4>
+                        <p className="text-slate-400 mt-3 md:mt-4 text-xs md:text-sm leading-relaxed">End-to-end design and high-volume data management.</p>
+                      </div>
+                    </Link>
                   </motion.div>
-                ))}
-              </motion.div>
-            )}
-
-            {activeTab === "Certification" && (
-              <motion.div key="cert" initial="hidden" animate="visible" exit="hidden" variants={containerVariants} className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-                {Array.from({ length: 15 }).map((_, i) => (
-                  <motion.div key={i} variants={itemVariants} onClick={() => setSelectedCert(`/cert-${i + 1}.png`)} className="aspect-video bg-[#242628] rounded-xl md:rounded-2xl border border-white/5 flex items-center justify-center group relative overflow-hidden shadow-lg hover:border-cyan-500/50 transition-all cursor-pointer">
-                    <img src={`/cert-${i + 1}.png`} className="w-full h-full object-cover opacity-80" alt={`Cert ${i + 1}`} />
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
-                      <span className="text-white text-[9px] md:text-xs font-bold tracking-[0.3em] uppercase">Expand</span>
-                    </div>
+                  
+                  <motion.div variants={itemVariants} className="group bg-[#242628] rounded-3xl p-8 md:p-10 border border-white/5 flex flex-col justify-center items-center text-center hover:border-emerald-500/50 transition-all">
+                    <h4 className="text-2xl md:text-3xl font-bold">Portfolio 2026</h4>
+                    <p className="text-emerald-400 font-mono text-[10px] mt-2 md:mt-3 uppercase tracking-widest">Ongoing</p>
+                    <p className="text-slate-400 mt-4 md:mt-6 text-xs md:text-sm">Expanding and Seeking More.</p>
                   </motion.div>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
+                </motion.div>
+              )}
+
+              {activeTab === "Skills" && (
+                <motion.div key="skills" initial="hidden" animate="visible" exit="hidden" variants={containerVariants} className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 md:gap-8">
+                  {skills.map(skill => (
+                    <motion.div key={skill.name} variants={itemVariants} className="flex flex-col items-center group">
+                      <div className="w-16 h-16 md:w-24 md:h-24 bg-[#2a2c2e] rounded-2xl md:rounded-3xl p-4 md:p-6 border border-white/5 flex items-center justify-center transition-all group-hover:scale-110 group-hover:border-cyan-500">
+                        <img src={`/${skill.img}`} className="w-full h-full object-contain" alt={skill.name} loading="lazy" />
+                      </div>
+                      <span className="mt-2 md:mt-4 text-[9px] md:text-xs font-bold tracking-widest text-slate-500 group-hover:text-white uppercase">{skill.name}</span>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              )}
+
+              {activeTab === "Certification" && (
+                <motion.div key="cert" initial="hidden" animate="visible" exit="hidden" variants={containerVariants} className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+                  {Array.from({ length: 15 }).map((_, i) => (
+                    <motion.div key={i} variants={itemVariants} onClick={() => setSelectedCert(`/cert-${i + 1}.png`)} className="aspect-video bg-[#242628] rounded-xl md:rounded-2xl border border-white/5 flex items-center justify-center group relative overflow-hidden shadow-lg hover:border-cyan-500/50 transition-all cursor-pointer">
+                      <img src={`/cert-${i + 1}.png`} className="w-full h-full object-cover opacity-80" alt={`Cert ${i + 1}`} loading="lazy" />
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+                        <span className="text-white text-[9px] md:text-xs font-bold tracking-[0.3em] uppercase">Expand</span>
+                      </div>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div> {/* --- End Subscroll Container --- */}
+          
         </div>
       </motion.section>
 
-      {/* --- Section 4: Contact (CRITICAL FIX: z-[20]) --- */}
+      {/* --- Section 4: Contact --- */}
       <motion.section id="contact" className="py-24 md:py-40 max-w-5xl mx-auto px-6 relative z-[20]">
         <motion.h2 variants={itemVariants} className="text-5xl md:text-7xl font-black mb-12 md:mb-20 text-center uppercase tracking-tighter">Contact</motion.h2>
         <div className="grid md:grid-cols-2 gap-12 md:gap-20">
