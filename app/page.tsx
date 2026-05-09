@@ -440,6 +440,22 @@ export default function Portfolio() {
                     </Link>
                   </motion.div>
                   
+                  <motion.div 
+                    variants={itemVariants} 
+                    className="group bg-[#242628] rounded-3xl overflow-hidden border border-white/5 transition-all hover:scale-[1.02] hover:border-blue-500/50 shadow-xl cursor-pointer"
+                  >
+                    <Link href="/projects/github-rpg" className="block w-full h-full">
+                      <img src="/github-rpg.png" className="h-48 md:h-64 w-full object-cover" alt="GitHub RPG Summoner" loading="lazy" />
+                      <div className="p-6 md:p-8">
+                        <span className="text-[10px] text-blue-400 font-mono uppercase tracking-widest">Frontend Dev & API</span>
+                        <h4 className="text-xl md:text-2xl font-bold mt-3 md:mt-4">GitHub RPG Summoner</h4>
+                        <p className="text-slate-400 mt-3 md:mt-4 text-xs md:text-sm leading-relaxed">
+                          Interactive React app translating GitHub metrics into 3D character cards.
+                        </p>
+                      </div>
+                    </Link>
+                  </motion.div>
+
                   <motion.div variants={itemVariants} className="group bg-[#242628] rounded-3xl p-8 md:p-10 border border-white/5 flex flex-col justify-center items-center text-center hover:border-emerald-500/50 transition-all">
                     <h4 className="text-2xl md:text-3xl font-bold">Portfolio 2026</h4>
                     <p className="text-emerald-400 font-mono text-[10px] mt-2 md:mt-3 uppercase tracking-widest">Ongoing</p>
